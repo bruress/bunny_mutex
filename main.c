@@ -1,19 +1,25 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <unistd.h> // для sleep()
 
-#include "sum_date.h"
-#include "parity_sum_date.h"
-
+#include "include/tables.h"
+#include "include/sum_date.h"
+#include "include/parity_sum_date.h"
 
 int main() {
-    int sum = 0;
-    bool flag = false;
+    // инициализация структур и полей
+    struct SumTable sum_table = {0, false};
+    struct ParityTable parity_table = {false, false};
 
-    sum = sum_date();
-    printf("Сумма: %d\n", sum);
+    struct SumTable *s = &sum_table;     // указатель на таблицу с суммами
+    struct ParityTable *p = &parity_table;  // указатель на таблицу с четностью
 
-    flag = sum_date_is_bool(sum);
-    printf("%s\n", flag ? "Сумма четная\n" : "Сумма нечетаная\n");
+    while (1) {
+        s->sum = sum_date();
+        printf("Сумма: %d\n", s->sum);
 
+        p->is_parity = sum_date_is_bool(s->sum);
+        printf("%s\n", p->is_parity ? "Сумма четная\n" : "Сумма нечетаная\n");
+    }
     return 0;
 }

@@ -1,25 +1,31 @@
 #include <stdbool.h>
-#include <stdio.h>
-#include <unistd.h> // для sleep()
+#include <pthread.h> // для мьютекса
 
 #include "include/tables.h"
-#include "include/sum_date.h"
-#include "include/parity_sum_date.h"
+#include "include/parity_worker.h"
+#include "include/sum_worker.h"
 
-int main() {
+int main(void) {
     // инициализация структур и полей
     struct SumTable sum_table = {0, false};
     struct ParityTable parity_table = {false, false};
 
-    struct SumTable *s = &sum_table;     // указатель на таблицу с суммами
-    struct ParityTable *p = &parity_table;  // указатель на таблицу с четностью
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // инициализация мьютекса
 
-    while (1) {
-        s->sum = sum_date();
-        printf("Сумма: %d\n", s->sum);
+    // сразу задаем значения полей
+    struct ThreadArgs args = {
+        .s = &sum_table,
+        .p = &parity_table,
+        .mutex = &mutex
+    };
 
-        p->is_parity = sum_date_is_bool(s->sum);
-        printf("%s\n", p->is_parity ? "Сумма четная\n" : "Сумма нечетаная\n");
-    }
+    pthread_t t1, t2;
+
+    pthread_create(&t1, NULL, sum_worker, &args);
+    pthread_create(&t2, NULL, parity_worker, &args);
+    pthread_join(t1,NULL);
+    pthread_join(t2, NULL);
+    pthread_mutex_destroy(&mutex);
+
     return 0;
 }

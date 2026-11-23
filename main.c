@@ -19,7 +19,10 @@ int main(void) {
         .p = &parity_table,
         .mutex = &mutex,
         .parity_paused = false,
-        .sum_paused = false
+        .sum_paused = false,
+        .sum_delay_ms = 1000,
+        .parity_delay_ms = 1000,
+        .stop_requested = false
     };
 
     pthread_t t1, t2;
@@ -28,6 +31,10 @@ int main(void) {
     pthread_create(&t2, NULL, parity_worker, &args);
 
     gui(&args);
+
+    pthread_mutex_lock(&mutex);
+    args.stop_requested = true; // остановка потоков после закрытия окна
+    pthread_mutex_unlock(&mutex);
 
     pthread_join(t1,NULL);
     pthread_join(t2, NULL);

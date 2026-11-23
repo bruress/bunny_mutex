@@ -45,12 +45,37 @@ int stop_all_cb(Ihandle *self) {
     return IUP_DEFAULT;
 }
 
+// изменение скорости потока
+static void set_worker_speed(Ihandle *slider, int value) {
+    if (value < 0) value = 0;
+    if (value > 100) value = 100;
+
+    Ihandle *number_field = IupGetAttributeHandle(slider, "NUMBER_FIELD");
+    IupSetInt(slider, "VALUE", value);
+    IupSetInt(number_field, "VALUE", value);
+
+    struct ThreadArgs *args = (struct ThreadArgs *)IupGetAttribute(slider, "THREAD_ARGS");
+    int worker = IupGetInt(slider, "WORKER");   // номер потока
+    int delay_ms;                               // перевод скорости в задержку
+    if (value <= 50) {
+        delay_ms = 5000 - 80 * value;
+    } else {
+        delay_ms = 1000 - 18 * (value - 50);
+    }
+
+    pthread_mutex_lock(args->mutex);
+    if (worker == 1) {
+        args->sum_delay_ms = delay_ms;
+    } else {
+        args->parity_delay_ms = delay_ms;
+    }
+    pthread_mutex_unlock(args->mutex);
+}
+
 // обновление числа при движении ползунка
 int slider_value_cb(Ihandle *self) {
-    Ihandle *number_field = IupGetAttributeHandle(self, "NUMBER_FIELD");
     int value = (int)(IupGetDouble(self, "VALUE")+0.5);                 // округление в большую сторону
-    IupSetInt(self, "VALUE", value);
-    IupSetInt(number_field, "VALUE", value);
+    set_worker_speed(self, value);
     return IUP_DEFAULT;
 }
 
@@ -59,7 +84,7 @@ int number_value_cb(Ihandle *self) {
     const char *text = IupGetAttribute(self, "VALUE");
     if (text[0] == '\0') return IUP_DEFAULT;                // чтобы не перескочить в 0
     Ihandle *slider = IupGetAttributeHandle(self, "SLIDER");
-    IupSetInt(slider, "VALUE", IupGetInt(self, "VALUE"));
+    set_worker_speed(slider, IupGetInt(self, "VALUE"));
     return IUP_DEFAULT;
 }
 
@@ -97,7 +122,7 @@ int sum_table_cb(Ihandle *self) {
     IupSetInt(self, "LAST_ID", result.id);
     IupSetInt(self, "NEXT_ROW", row+1);
 
-    return  IUP_DEFAULT;
+    return IUP_DEFAULT;
 }
 
 // обновление таблицы четности
@@ -295,6 +320,12 @@ int gui(struct ThreadArgs *args) {
     // связь ползнуков с полями
     IupSetAttributeHandle(slider_t1, "NUMBER_FIELD", number_field_t1);
     IupSetAttributeHandle(slider_t2, "NUMBER_FIELD", number_field_t2);
+
+    // связь ползунков с потоками
+    IupSetAttribute(slider_t1, "THREAD_ARGS", (char *)args);
+    IupSetAttribute(slider_t2, "THREAD_ARGS", (char *)args);
+    IupSetInt(slider_t1, "WORKER", 1);
+    IupSetInt(slider_t2, "WORKER", 2);
 
     // связь поля с ползунком
     IupSetAttributeHandle(number_field_t1, "SLIDER", slider_t1);

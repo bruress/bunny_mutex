@@ -22,6 +22,9 @@ struct ThreadArgs {
     pthread_mutex_t *mutex; // т.к мы его уже создали!
     bool sum_paused;
     bool parity_paused;
+    int sum_delay_ms;       // задержка потока суммы
+    int parity_delay_ms;    // задержка потока четности
+    bool stop_requested;    // завершение работы потоков
 };
 
 #endif

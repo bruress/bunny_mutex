@@ -1,3 +1,7 @@
 main
 parity
 sum
+vendor/
+vendor/iup/
+compile_flags.txt
+Makefile

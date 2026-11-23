@@ -1,11 +1,14 @@
 #include <stdbool.h>
 #include <pthread.h> // для мьютекса
 
-#include "include/tables.h"
-#include "include/parity_worker.h"
-#include "include/sum_worker.h"
+#include "tables.h"
+#include "parity_worker.h"
+#include "sum_worker.h"
+#include "gui.h"
 
 int main(void) {
+    gui();
+
     // инициализация структур и полей
     struct SumTable sum_table = {0, false};
     struct ParityTable parity_table = {false, false};

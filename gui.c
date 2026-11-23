@@ -78,9 +78,11 @@ int gui(struct ThreadArgs *args) {
     setenv("GDK_BACKEND", "x11", 0);
 #endif
 
-    IupOpen(NULL, NULL);            // инициализация библиотеки iup
-    IupControlsOpen();              // инициализация библиотеки для таблиц matrix
-    srand((unsigned)time(NULL));    // инициализация рандомайзера
+    IupOpen(NULL, NULL);                    // инициализация библиотеки iup
+    IupSetGlobal("DLGFGCOLOR", "75 60 50"); // цвет надписей и заголовков
+    IupSetGlobal("TXTFGCOLOR", "75 60 50"); // цвет текста в полях и таблицах
+    IupControlsOpen();                      // инициализация библиотеки для таблиц matrix
+    srand((unsigned)time(NULL));            // инициализация рандомайзера
 
     // инициализация элементов
     Ihandle *button_stop_t1 = IupButton("Стоп", NULL);
@@ -122,6 +124,8 @@ int gui(struct ThreadArgs *args) {
     // настройка таймера раз в 5 с
     IupSetAttribute(timer, "TIME", "5000");
     IupSetCallback(timer, "ACTION_CB", (Icallback)bunny_rand);
+
+    IupSetAttribute(label, "FONTSTYLE", "Bold");
 
     // размеры таблицы сумм
     IupSetAttribute(sum_table, "NUMLIN", "20");
@@ -300,6 +304,7 @@ int gui(struct ThreadArgs *args) {
     IupSetAttribute(dlg, "TITLE", "Синхронизация процессов");       // заголовок окна
     IupSetAttribute(dlg, "RESIZE", "NO");
     IupSetAttribute(dlg, "RASTERSIZE", "1000x700");
+    IupSetAttribute(dlg, "BGCOLOR", "245 237 225");
     IupSetCallback(button_exit, "ACTION", (Icallback) btn_exit_cb); // назначение обработчика нажатия кнопки
 
     IupShowXY(dlg, IUP_CENTER, IUP_CENTER);

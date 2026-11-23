@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include <iup.h>
 #include <iupcontrols.h>
@@ -19,7 +20,7 @@ int btn_exit_cb(Ihandle *self) {
 int stop_sum_cb(Ihandle *self) {
     struct ThreadArgs *args = (struct ThreadArgs *)IupGetAttribute(self, "THREAD_ARGS");    // достаем из кнопки адрес структуры
     pthread_mutex_lock(args->mutex);
-    args->sum_paused=true;
+    args->sum_paused=!args->sum_paused;
     pthread_mutex_unlock(args->mutex);
     return  IUP_DEFAULT;
 }
@@ -28,7 +29,7 @@ int stop_sum_cb(Ihandle *self) {
 int stop_parity_cb(Ihandle *self) {
     struct ThreadArgs *args = (struct ThreadArgs *)IupGetAttribute(self, "THREAD_ARGS");    // достаем из кнопки адрес структуры
     pthread_mutex_lock(args->mutex);
-    args->parity_paused=true;
+    args->parity_paused=!args->parity_paused;
     pthread_mutex_unlock(args->mutex);
     return IUP_DEFAULT;
 }
@@ -37,8 +38,9 @@ int stop_parity_cb(Ihandle *self) {
 int stop_all_cb(Ihandle *self) {
     struct ThreadArgs *args = (struct ThreadArgs *)IupGetAttribute(self, "THREAD_ARGS");
     pthread_mutex_lock(args->mutex);
-    args->sum_paused=true;
-    args->parity_paused=true;
+    bool is_paused = (args->sum_paused && args->parity_paused);
+    args->sum_paused=!is_paused;
+    args->parity_paused=!is_paused;
     pthread_mutex_unlock(args->mutex);
     return IUP_DEFAULT;
 }

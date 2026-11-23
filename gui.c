@@ -66,9 +66,11 @@ int number_value_cb(Ihandle *self) {
 // рандомная загрузка bunny
 int bunny_rand(Ihandle *self) {
     Ihandle *label_image = IupGetAttributeHandle(self, "LABEL");
+    Ihandle *dlg = IupGetAttributeHandle(self, "DIALOG");
     int index = rand() % 9;
     Ihandle *image = IupGetAttributeHandleId(self, "IMAGE", index);
     IupSetAttributeHandle(label_image, "IMAGE", image);
+    IupSetAttributeHandle(dlg, "ICON", image);
     return IUP_DEFAULT;
 }
 
@@ -85,21 +87,32 @@ int gui(struct ThreadArgs *args) {
     srand((unsigned)time(NULL));            // инициализация рандомайзера
 
     // инициализация элементов
-    Ihandle *button_stop_t1 = IupButton("Стоп", NULL);
-    Ihandle *button_stop_t2 = IupButton("Стоп", NULL);
+    Ihandle *button_stop_t1 = IupFlatButton("Стоп");
+    Ihandle *button_stop_t2 = IupFlatButton("Стоп");
 
     IupSetAttribute(button_stop_t1, "THREAD_ARGS", (char *)args);
-    IupSetCallback(button_stop_t1, "ACTION", (Icallback) stop_sum_cb);
+    IupSetCallback(button_stop_t1, "FLAT_ACTION", (Icallback) stop_sum_cb);
 
 
     IupSetAttribute(button_stop_t2, "THREAD_ARGS", (char *)args);
-    IupSetCallback(button_stop_t2, "ACTION", (Icallback) stop_parity_cb);
+    IupSetCallback(button_stop_t2, "FLAT_ACTION", (Icallback) stop_parity_cb);
 
-    Ihandle *button_reset = IupButton("Стоп", NULL);
-    Ihandle *button_exit = IupButton("Выход", NULL);
+    Ihandle *button_reset = IupFlatButton("Стоп");
+    Ihandle *button_exit = IupFlatButton("Выход");
+
+    Ihandle *buttons[] = {
+        button_stop_t1, button_stop_t2, button_reset, button_exit
+    };
+
+    for (int i = 0; i < 4; i++) {
+        IupSetAttribute(buttons[i], "BGCOLOR", "225 207 183");
+        IupSetAttribute(buttons[i], "HLCOLOR", "240 207 177");
+        IupSetAttribute(buttons[i], "PSCOLOR", "210 188 160");
+        IupSetAttribute(buttons[i], "BORDERCOLOR", "170 140 110");
+    }
 
     IupSetAttribute(button_reset, "THREAD_ARGS", (char *)args);
-    IupSetCallback(button_reset, "ACTION", (Icallback) stop_all_cb);
+    IupSetCallback(button_reset, "FLAT_ACTION", (Icallback) stop_all_cb);
 
 
     Ihandle *label = IupLabel("OMG!!! It's bunny!");
@@ -305,9 +318,11 @@ int gui(struct ThreadArgs *args) {
     IupSetAttribute(dlg, "RESIZE", "NO");
     IupSetAttribute(dlg, "RASTERSIZE", "1000x700");
     IupSetAttribute(dlg, "BGCOLOR", "245 237 225");
-    IupSetCallback(button_exit, "ACTION", (Icallback) btn_exit_cb); // назначение обработчика нажатия кнопки
-
+    IupSetCallback(button_exit, "FLAT_ACTION", (Icallback) btn_exit_cb); // назначение обработчика нажатия кнопки
+    IupSetAttributeHandle(dlg, "ICON", images[index]);
+    IupSetAttributeHandle(timer, "DIALOG", dlg);
     IupShowXY(dlg, IUP_CENTER, IUP_CENTER);
+
     IupSetAttribute(timer, "RUN", "YES");
     IupMainLoop();
 

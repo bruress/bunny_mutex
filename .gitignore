@@ -5,3 +5,6 @@ vendor/
 vendor/iup/
 compile_flags.txt
 Makefile
+build/
+dist/
+tools/

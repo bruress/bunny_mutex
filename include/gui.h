@@ -3,6 +3,8 @@
 
 #include <iup.h>
 
-int gui();
+#include "tables.h"
+
+int gui(struct ThreadArgs *args);
 
 #endif

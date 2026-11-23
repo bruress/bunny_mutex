@@ -18,6 +18,8 @@ struct ThreadArgs {
     struct SumTable *s;
     struct ParityTable *p;
     pthread_mutex_t *mutex; // т.к мы его уже создали!
+    bool sum_paused;
+    bool parity_paused;
 };
 
 #endif

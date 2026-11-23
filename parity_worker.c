@@ -9,7 +9,7 @@ void *parity_worker(void *arg) {
     struct ThreadArgs *args = arg; // получаем указатель на структуру
     while(1) {
         pthread_mutex_lock(args->mutex);
-        if (args->s->is_ready == true) {
+        if (args->s->is_ready == true && args->parity_paused == false) {
             args->p->is_parity = sum_date_is_bool(args->s->sum);
             args->s->is_ready = false;
             args->p->is_ready = true;

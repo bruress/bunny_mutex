@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -7,11 +8,39 @@
 #include <iupim.h>
 
 #include "gui.h"
+#include "tables.h"
 
-// обработка нажатия кнопки
+// выход из ПО
 int btn_exit_cb(Ihandle *self) {
-    IupMessage("Hello World message", "Hello world frim IUP");
     return IUP_CLOSE;
+}
+
+// остановка потока суммы
+int stop_sum_cb(Ihandle *self) {
+    struct ThreadArgs *args = (struct ThreadArgs *)IupGetAttribute(self, "THREAD_ARGS");    // достаем из кнопки адрес структуры
+    pthread_mutex_lock(args->mutex);
+    args->sum_paused=true;
+    pthread_mutex_unlock(args->mutex);
+    return  IUP_DEFAULT;
+}
+
+// остановка потока четости
+int stop_parity_cb(Ihandle *self) {
+    struct ThreadArgs *args = (struct ThreadArgs *)IupGetAttribute(self, "THREAD_ARGS");    // достаем из кнопки адрес структуры
+    pthread_mutex_lock(args->mutex);
+    args->parity_paused=true;
+    pthread_mutex_unlock(args->mutex);
+    return IUP_DEFAULT;
+}
+
+// остановка всех потоков
+int stop_all_cb(Ihandle *self) {
+    struct ThreadArgs *args = (struct ThreadArgs *)IupGetAttribute(self, "THREAD_ARGS");
+    pthread_mutex_lock(args->mutex);
+    args->sum_paused=true;
+    args->parity_paused=true;
+    pthread_mutex_unlock(args->mutex);
+    return IUP_DEFAULT;
 }
 
 // обновление числа при движении ползунка
@@ -41,7 +70,7 @@ int bunny_rand(Ihandle *self) {
     return IUP_DEFAULT;
 }
 
-int gui(void) {
+int gui(struct ThreadArgs *args) {
 // чтобы работало до комплияции, в случае windows
 #ifdef __linux__
     setenv("GDK_BACKEND", "x11", 0);
@@ -55,8 +84,19 @@ int gui(void) {
     Ihandle *button_stop_t1 = IupButton("Стоп", NULL);
     Ihandle *button_stop_t2 = IupButton("Стоп", NULL);
 
-    Ihandle *button_reset = IupButton("Сброс", NULL);
+    IupSetAttribute(button_stop_t1, "THREAD_ARGS", (char *)args);
+    IupSetCallback(button_stop_t1, "ACTION", (Icallback) stop_sum_cb);
+
+
+    IupSetAttribute(button_stop_t2, "THREAD_ARGS", (char *)args);
+    IupSetCallback(button_stop_t2, "ACTION", (Icallback) stop_parity_cb);
+
+    Ihandle *button_reset = IupButton("Стоп", NULL);
     Ihandle *button_exit = IupButton("Выход", NULL);
+
+    IupSetAttribute(button_reset, "THREAD_ARGS", (char *)args);
+    IupSetCallback(button_reset, "ACTION", (Icallback) stop_all_cb);
+
 
     Ihandle *label = IupLabel("OMG!!! It's bunny!");
     Ihandle *label_image = IupLabel(NULL);

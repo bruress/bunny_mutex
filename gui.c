@@ -32,7 +32,21 @@ int number_value_cb(Ihandle *self) {
     return IUP_DEFAULT;
 }
 
+// рандомная загрузка bunny
+int bunny_rand(Ihandle *self) {
+    Ihandle *label_image = IupGetAttributeHandle(self, "LABEL");
+    int index = rand() % 9;
+    Ihandle *image = IupGetAttributeHandleId(self, "IMAGE", index);
+    IupSetAttributeHandle(label_image, "IMAGE", image);
+    return IUP_DEFAULT;
+}
+
 int gui(void) {
+// чтобы работало до комплияции, в случае windows
+#ifdef __linux__
+    setenv("GDK_BACKEND", "x11", 0);
+#endif
+
     IupOpen(NULL, NULL);            // инициализация библиотеки iup
     IupControlsOpen();              // инициализация библиотеки для таблиц matrix
     srand((unsigned)time(NULL));    // инициализация рандомайзера
@@ -41,7 +55,7 @@ int gui(void) {
     Ihandle *button_stop_t1 = IupButton("Стоп", NULL);
     Ihandle *button_stop_t2 = IupButton("Стоп", NULL);
 
-    Ihandle *button_stop = IupButton("Стоп", NULL);
+    Ihandle *button_reset = IupButton("Сброс", NULL);
     Ihandle *button_exit = IupButton("Выход", NULL);
 
     Ihandle *label = IupLabel("OMG!!! It's bunny!");
@@ -60,13 +74,19 @@ int gui(void) {
     Ihandle *number_field_t2 = IupText(NULL);
 
     Ihandle *images[9];
+    Ihandle *timer = IupTimer();
+
+
+    // настройка таймера раз в 5 с
+    IupSetAttribute(timer, "TIME", "5000");
+    IupSetCallback(timer, "ACTION_CB", (Icallback)bunny_rand);
 
     // размеры таблицы сумм
     IupSetAttribute(sum_table, "NUMLIN", "20");
     IupSetAttribute(sum_table, "NUMCOL", "2");
-    IupSetAttribute(sum_table, "RASTERWIDTH1", "50");
-    IupSetAttribute(sum_table, "RASTERWIDTH2", "130");
-    IupSetAttribute(sum_table, "HEIGHTDEF", "10");
+    IupSetAttribute(sum_table, "RASTERWIDTH1", "45");
+    IupSetAttribute(sum_table, "RASTERWIDTH2", "110");
+    IupSetAttribute(sum_table, "HEIGHTDEF", "5");
     IupSetAttribute(sum_table, "NUMLIN_VISIBLE", "20");
     IupSetAttribute(sum_table, "NUMCOL_VISIBLE", "2");
     IupSetAttribute(sum_table, "EXPAND", "NO");         // никакого растягивания, из-за него не видно ползунки!
@@ -86,9 +106,9 @@ int gui(void) {
     // размеры таблицы четности
     IupSetAttribute(parity_table, "NUMLIN", "20");
     IupSetAttribute(parity_table, "NUMCOL", "2");
-    IupSetAttribute(parity_table, "RASTERWIDTH1", "50");
-    IupSetAttribute(parity_table, "RASTERWIDTH2", "130");
-    IupSetAttribute(parity_table, "HEIGHTDEF", "10");
+    IupSetAttribute(parity_table, "RASTERWIDTH1", "45");
+    IupSetAttribute(parity_table, "RASTERWIDTH2", "110");
+    IupSetAttribute(parity_table, "HEIGHTDEF", "5");
     IupSetAttribute(parity_table, "NUMLIN_VISIBLE", "20");
     IupSetAttribute(parity_table, "NUMCOL_VISIBLE", "2");
     IupSetAttribute(parity_table, "EXPAND", "NO");         // никакого растягивания, из-за него не видно ползунки!
@@ -133,6 +153,16 @@ int gui(void) {
     IupSetAttribute(number_field_t2, "EXPAND", "NO");
     IupSetAttribute(number_field_t2, "ALIGNMENT", "ACENTER");
 
+    IupSetAttribute(button_stop_t1, "RASTERSIZE", "80x34");
+    IupSetAttribute(button_stop_t2, "RASTERSIZE", "80x34");
+    IupSetAttribute(button_reset, "RASTERSIZE", "120x36");
+    IupSetAttribute(button_exit, "RASTERSIZE", "120x36");
+
+    IupSetAttribute(label_task, "WORDWRAP", "YES");
+    IupSetAttribute(label_task, "RASTERSIZE", "1x85");
+    IupSetAttribute(label_task, "EXPAND", "HORIZONTAL");
+    IupSetAttribute(label_task, "ALIGNMENT", "ALEFT:ATOP");
+
     // связь ползнуков с полями
     IupSetAttributeHandle(slider_t1, "NUMBER_FIELD", number_field_t1);
     IupSetAttributeHandle(slider_t2, "NUMBER_FIELD", number_field_t2);
@@ -154,49 +184,87 @@ int gui(void) {
         char filename[100];
         snprintf(filename, sizeof(filename), "img/bunny/bunny_%02d.png", i + 1);
         images[i] = IupLoadImage(filename);
+        IupSetAttributeHandleId(timer, "IMAGE", i, images[i]);
     }
 
     // выбор случайной картинки
     int index = rand() % 9;
     IupSetAttributeHandle(label_image, "IMAGE", images[index]);
+    IupSetAttributeHandle(timer, "LABEL", label_image);
 
     // размещение слайдеров
-    Ihandle *slider_box_t1 = IupVbox(slider_t1, number_field_t1, NULL);
+    Ihandle *slider_box_t1 = IupVbox(slider_t1, number_field_t1, button_stop_t1, NULL);
     IupSetAttribute(slider_box_t1, "MARGIN", "10x10");
     IupSetAttribute(slider_box_t1, "GAP", "8");
     IupSetAttribute(slider_box_t1, "ALIGNMENT", "ACENTER");
     Ihandle *slider_frame_t1 = IupFrame(slider_box_t1);
     IupSetAttribute(slider_frame_t1, "TITLE", "Поток №1");
 
-    Ihandle *slider_box_t2 = IupVbox(slider_t2, number_field_t2, NULL);
+    Ihandle *slider_box_t2 = IupVbox(slider_t2, number_field_t2, button_stop_t2, NULL);
     IupSetAttribute(slider_box_t2, "MARGIN", "10x10");
     IupSetAttribute(slider_box_t2, "GAP", "8");
     IupSetAttribute(slider_box_t2, "ALIGNMENT", "ACENTER");
     Ihandle *slider_frame_t2 = IupFrame(slider_box_t2);
     IupSetAttribute(slider_frame_t2, "TITLE", "Поток №2");
 
-    Ihandle *tables = IupHbox(sum_table, parity_table, slider_frame_t1, slider_frame_t2, NULL); // таблицы и ползунок рядом
-    IupSetAttribute(tables, "GAP", "10"); // расстояние между элементами
+    Ihandle *controls = IupHbox(slider_frame_t1, slider_frame_t2, NULL);
+    IupSetAttribute(controls, "MARGIN", "0x0");
+    IupSetAttribute(controls, "GAP", "8");
+    IupSetAttribute(controls, "EXPAND", "NO");
+
+    Ihandle *sum_frame = IupFrame(sum_table);
+    IupSetAttribute(sum_frame, "TITLE", "Таблица потока №1");
+
+    Ihandle *parity_frame = IupFrame(parity_table);
+    IupSetAttribute(parity_frame, "TITLE", "Таблица потока №2");
+
+    Ihandle *bunny_box = IupVbox(IupFill(), label, label_image, IupFill(), NULL);
+    IupSetAttribute(bunny_box, "MARGIN", "0x0");
+    IupSetAttribute(bunny_box, "ALIGNMENT", "ACENTER");
+    IupSetAttribute(bunny_box, "GAP", "8");
+    IupSetAttribute(bunny_box, "EXPAND", "VERTICAL");
+
+    Ihandle *tables = IupHbox(controls, IupFill(), sum_frame, parity_frame, IupFill(), bunny_box, NULL);
+    IupSetAttribute(tables, "GAP", "12");
+    IupSetAttribute(tables, "ALIGNMENT", "ATOP");
+    IupSetAttribute(tables, "MARGIN", "0x0");
+    IupSetAttribute(tables, "EXPAND", "HORIZONTAL");
+
+    Ihandle *task_box = IupVbox(label_task, NULL);
+    IupSetAttribute(task_box, "MARGIN", "12x12");
+    Ihandle *task_frame = IupFrame(task_box);
+    IupSetAttribute(task_frame, "TITLE", "Задание");
+
+    Ihandle *actions = IupVbox(button_reset, button_exit, NULL);
+    IupSetAttribute(actions, "MARGIN", "0x0");
+    IupSetAttribute(actions, "GAP", "10");
+    IupSetAttribute(actions, "EXPAND", "NO");
+
+    Ihandle *footer = IupHbox(task_frame, actions, NULL);
+    IupSetAttribute(footer, "MARGIN", "0x0");
+    IupSetAttribute(footer, "GAP", "16");
+    IupSetAttribute(footer, "ALIGNMENT", "ATOP");
+    IupSetAttribute(footer, "EXPAND", "HORIZONTAL");
 
     Ihandle *vbox = IupVbox(
-        button_stop,
-        button_exit,
-        button_stop_t1,
-        button_stop_t2,
-        label,
-        label_image,
-        label_task,
         tables,
+        footer,
         NULL
     );
+    IupSetAttribute(vbox, "MARGIN", "16x16");
+    IupSetAttribute(vbox, "GAP", "16");
 
     Ihandle *dlg = IupDialog(vbox);                                 // создание окна с элементами из контейнера
     IupSetAttribute(dlg, "TITLE", "Синхронизация процессов");       // заголовок окна
+    IupSetAttribute(dlg, "RESIZE", "NO");
+    IupSetAttribute(dlg, "RASTERSIZE", "1000x700");
     IupSetCallback(button_exit, "ACTION", (Icallback) btn_exit_cb); // назначение обработчика нажатия кнопки
 
     IupShowXY(dlg, IUP_CENTER, IUP_CENTER);
+    IupSetAttribute(timer, "RUN", "YES");
     IupMainLoop();
 
+    IupDestroy(timer);
     IupClose();
     return EXIT_SUCCESS;
 }

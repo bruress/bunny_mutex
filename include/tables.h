@@ -5,11 +5,13 @@
 #include <pthread.h>
 
 struct SumTable {
+    int id;
     int sum;
     bool is_ready;
 };
 
 struct ParityTable {
+    int id;
     bool is_parity;
     bool is_ready;
 };

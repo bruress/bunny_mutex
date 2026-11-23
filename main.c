@@ -8,8 +8,8 @@
 
 int main(void) {
     // инициализация структур и полей
-    struct SumTable sum_table = {0, false};
-    struct ParityTable parity_table = {false, false};
+    struct SumTable sum_table = {0, 0, false};
+    struct ParityTable parity_table = {0, false, false};
 
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // инициализация мьютекса
 

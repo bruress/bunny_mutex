@@ -74,6 +74,58 @@ int bunny_rand(Ihandle *self) {
     return IUP_DEFAULT;
 }
 
+// обновление таблицы суммы
+int sum_table_cb(Ihandle *self) {
+    struct ThreadArgs *args = (struct ThreadArgs *)IupGetAttribute(self, "THREAD_ARGS");
+    Ihandle *sum_table = IupGetAttributeHandle(self, "SUM_TABLE");
+    pthread_mutex_lock(args->mutex);
+    struct SumTable result = *args->s;          // копирование результата
+    pthread_mutex_unlock(args->mutex);
+
+    int last_id = IupGetInt(self, "LAST_ID");   // ласт показанный номер
+    if (result.id <= last_id) return IUP_DEFAULT;
+
+    int row = IupGetInt(self, "NEXT_ROW");      // некст строка
+    if (row>IupGetInt(sum_table,"NUMLIN")) {
+        IupSetInt(sum_table,"NUMLIN", row);     //добавляем некст строку
+    }
+
+    IupSetIntId2(sum_table, "", row, 1, result.id);
+    IupSetIntId2(sum_table, "", row, 2, result.sum);
+    IupSetAttribute(sum_table, "REDRAW", "ALL");
+
+    IupSetInt(self, "LAST_ID", result.id);
+    IupSetInt(self, "NEXT_ROW", row+1);
+
+    return  IUP_DEFAULT;
+}
+
+// обновление таблицы четности
+int parity_table_cb(Ihandle *self) {
+    struct ThreadArgs *args = (struct ThreadArgs *)IupGetAttribute(self, "THREAD_ARGS");
+    Ihandle *parity_table = IupGetAttributeHandle(self, "PARITY_TABLE");
+
+    pthread_mutex_lock(args->mutex);
+    struct ParityTable result = *args->p;               // копирование результата
+    pthread_mutex_unlock(args->mutex);
+
+    int last_id = IupGetInt(self, "LAST_ID");           // ласт показанный номер
+    if (result.id <= last_id) return IUP_DEFAULT;
+
+    int row = IupGetInt(self, "NEXT_ROW");              // некст строка
+    if (row > IupGetInt(parity_table, "NUMLIN")) {
+        IupSetInt(parity_table, "NUMLIN", row);;        //добавляем некст строку
+    }
+
+    IupSetIntId2(parity_table, "", row, 1, result.id);
+    IupSetAttributeId2(parity_table, "", row, 2, result.is_parity ? "true" : "false");
+    IupSetAttribute(parity_table, "REDRAW", "ALL");
+
+    IupSetInt(self, "LAST_ID", result.id);
+    IupSetInt(self, "NEXT_ROW", row + 1);
+    return IUP_DEFAULT;
+}
+
 int gui(struct ThreadArgs *args) {
 // чтобы работало до комплияции, в случае windows
 #ifdef __linux__
@@ -132,6 +184,8 @@ int gui(struct ThreadArgs *args) {
 
     Ihandle *images[9];
     Ihandle *timer = IupTimer();
+    Ihandle *parity_timer = IupTimer();
+    Ihandle *sum_timer = IupTimer();
 
 
     // настройка таймера раз в 5 с
@@ -158,9 +212,21 @@ int gui(struct ThreadArgs *args) {
     IupSetAttribute(sum_table, "0:1", "№");
     IupSetAttribute(sum_table, "0:2", "Сумма");
 
-    // пример суммы
-    IupSetAttribute(sum_table, "1:1", "1");
-    IupSetAttribute(sum_table, "1:2", "2090");
+    // запись суммы
+    IupSetAttribute(sum_timer,"THREAD_ARGS", (char *)args);
+    IupSetAttributeHandle(sum_timer, "SUM_TABLE", sum_table);
+    IupSetInt(sum_timer, "LAST_ID", 0);
+    IupSetInt(sum_timer, "NEXT_ROW", 1);
+    IupSetInt(sum_timer, "TIME", 100); // проверка результата раз в сто мс
+    IupSetCallback(sum_timer, "ACTION_CB", (Icallback)sum_table_cb);
+
+    // запись четности
+    IupSetAttribute(parity_timer, "THREAD_ARGS", (char *)args);
+    IupSetAttributeHandle(parity_timer, "PARITY_TABLE", parity_table);
+    IupSetInt(parity_timer, "LAST_ID", 0);
+    IupSetInt(parity_timer, "NEXT_ROW", 1);
+    IupSetInt(parity_timer, "TIME", 100); // проверка результата раз в сто мс
+    IupSetCallback(parity_timer, "ACTION_CB", (Icallback)parity_table_cb);
 
     // размеры таблицы четности
     IupSetAttribute(parity_table, "NUMLIN", "20");
@@ -180,9 +246,13 @@ int gui(struct ThreadArgs *args) {
     IupSetAttribute(parity_table, "0:1", "№");
     IupSetAttribute(parity_table, "0:2", "Чётность");
 
-    // пример четности
-    IupSetAttribute(parity_table, "1:1", "1");
-    IupSetAttribute(parity_table, "1:2", "true");
+    // запись четности
+    IupSetAttribute(parity_timer, "THREAD_ARGS", (char *)args);
+    IupSetAttributeHandle(parity_timer, "PARITY_TABLE", parity_table);
+    IupSetInt(parity_timer, "LAST_ID", 0);
+    IupSetInt(parity_timer, "NEXT_ROW", 1);
+    IupSetInt(parity_timer, "TIME", 100); // проверка результата раз в сто мс
+    IupSetCallback(parity_timer, "ACTION_CB", (Icallback)parity_table_cb);
 
     // инициализация ползунков
     IupSetAttribute(slider_t1, "MIN", "0");
@@ -324,8 +394,12 @@ int gui(struct ThreadArgs *args) {
     IupShowXY(dlg, IUP_CENTER, IUP_CENTER);
 
     IupSetAttribute(timer, "RUN", "YES");
+    IupSetAttribute(parity_timer, "RUN", "YES");
+    IupSetAttribute(sum_timer, "RUN", "YES");
     IupMainLoop();
 
+    IupDestroy(sum_timer);
+    IupDestroy(parity_timer);
     IupDestroy(timer);
     IupClose();
     return EXIT_SUCCESS;
